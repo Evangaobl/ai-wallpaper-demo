@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI生态壁纸 · 运营后台</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0e14;--bg2:#11141e;--bg3:#171b27;
+  --card:rgba(255,255,255,0.015);--card-hover:rgba(255,255,255,0.03);
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
+  --t1:#e4e7ed;--t2:#8a9099;--t3:#585e68;
+  --accent:#1cc6d4;--accent-dim:rgba(28,198,212,0.1);
+  --green:#4caf7d;--red:#e8544a;--amber:#f0a030;--blue:#4a90d9;--purple:#b388ff;
+  --radius:12px;--r-sm:8px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:'SF Mono',Consolas,monospace;
+}
+*{font-family:var(--font)}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--t1);display:flex;flex-direction:column;font-size:13px}
+
+/* Nav */
+.nav{display:flex;align-items:center;padding:0 24px;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;gap:4px;overflow-x:auto}
+.nav-logo{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;margin-right:24px;flex-shrink:0}
+.nav-logo .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent-glow)}
+.nav-tab{padding:8px 16px;border-radius:var(--r-sm);font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;transition:all 0.2s;border:none;background:none;font-family:var(--font);letter-spacing:0.3px;white-space:nowrap}
+.nav-tab:hover{color:var(--t1);background:rgba(255,255,255,0.03)}
+.nav-tab.active{color:var(--accent);background:var(--accent-dim)}
+.nav-spacer{flex:1;min-width:8px}
+.nav-user{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--card);border-radius:20px;border:1px solid var(--border);flex-shrink:0}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:20px 24px;scroll-behavior:smooth}
+.main::-webkit-scrollbar{width:4px}
+.main::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:4px}
+.tab-page{display:none}
+.tab-page.active{display:block}
+
+/* Cards */
+.card{background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border);padding:16px 18px;margin-bottom:16px}
+.card-hd{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-hd .badge{font-size:10px;text-transform:none;letter-spacing:0;padding:2px 8px;border-radius:10px;font-weight:500}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500}
+.tag.green{background:rgba(76,175,125,0.12);color:var(--green)}
+.tag.red{background:rgba(232,84,74,0.12);color:var(--red)}
+.tag.amber{background:rgba(240,160,48,0.12);color:var(--amber)}
+.tag.blue{background:rgba(74,144,217,0.12);color:var(--blue)}
+.tag.accent{background:var(--accent-dim);color:var(--accent)}
+.tag.purple{background:rgba(179,136,255,0.12);color:var(--purple)}
+.btn{padding:7px 16px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--card);color:var(--t1);font-size:12px;cursor:pointer;transition:all 0.2s;font-family:var(--font);font-weight:500}
+.btn:hover{background:var(--card-hover);border-color:var(--border2)}
+.btn.sm{padding:4px 10px;font-size:10px}
+.btn.accent{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.btn.accent:hover{background:rgba(28,198,212,0.18)}
+.btn.green{border-color:var(--green);color:var(--green);background:rgba(76,175,125,0.08)}
+.btn.green:hover{background:rgba(76,175,125,0.15)}
+.btn.red{border-color:var(--red);color:var(--red);background:rgba(232,84,74,0.08)}
+.inp{padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--t1);font-size:12px;width:100%;font-family:var(--font);outline:none;transition:border 0.2s}
+.inp:focus{border-color:var(--accent)}
+select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a9099'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.flex{display:flex}.gap-6{gap:6px}.gap-8{gap:8px}.gap-10{gap:10px}.gap-12{gap:12px}.items-center{align-items:center}.mb-6{margin-bottom:6px}.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}.mt-8{margin-top:8px}.mt-12{margin-top:12px}.justify-between{justify-content:space-between}
+.truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.text-center{text-align:center}
+.w-full{width:100%}
+.flex-shrink-0{flex-shrink:0}
+
+/* ==================== DASHBOARD ==================== */
+.db-period{display:flex;gap:4px;margin-bottom:16px}
+.db-period .p-btn{padding:5px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--t2);font-size:11px;cursor:pointer;transition:all 0.2s;font-family:var(--font)}
+.db-period .p-btn:hover{border-color:var(--border2);color:var(--t1)}
+.db-period .p-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.db-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.db-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden}
+.db-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.db-card:nth-child(1)::before{background:linear-gradient(90deg,var(--accent),#4dd0e1)}
+.db-card:nth-child(2)::before{background:linear-gradient(90deg,var(--blue),#64b5f6)}
+.db-card:nth-child(3)::before{background:linear-gradient(90deg,var(--green),#81c784)}
+.db-card:nth-child(4)::before{background:linear-gradient(90deg,var(--purple),#b39ddb)}
+.db-card .db-icon{font-size:20px;margin-bottom:6px}
+.db-card .db-val{font-size:28px;font-weight:700;letter-spacing:-0.5px;line-height:1.1}
+.db-card .db-lbl{font-size:11px;color:var(--t2);margin-top:4px}
+.db-card .db-trend{font-size:10px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.db-card .db-trend.up{color:var(--green)}
+.db-card .db-trend.down{color:var(--red)}
+.db-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.db-chart-section .chart-item{display:flex;align-items:center;gap:10px;padding:6px 0}
+.db-chart-section .chart-item .ci-lbl{font-size:12px;min-width:70px;color:var(--t2)}
+.db-chart-section .chart-item .ci-bar{flex:1;height:6px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden}
+.db-chart-section .chart-item .ci-bar .fill{height:100%;border-radius:3px;transition:width 1s}
+.db-chart-section .chart-item .ci-pct{font-size:11px;min-width:35px;text-align:right;color:var(--t1);font-weight:500}
+.db-ring{width:48px;height:48px;border-radius:50%;position:relative;flex-shrink:0}
+.db-ring svg{transform:rotate(-90deg)}
+.db-ring .ring-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600}
+.alert-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);margin-bottom:6px}
+.alert-item.ok{background:rgba(76,175,125,0.06);border-left:2px solid var(--green)}
+.alert-item.warn{background:rgba(240,160,48,0.06);border-left:2px solid var(--amber)}
+.alert-item.err{background:rgba(232,84,74,0.06);border-left:2px solid var(--red)}
+.alert-item .al-icon{font-size:16px}
+.alert-item .al-body{flex:1}
+.alert-item .al-body .al-title{font-size:12px}
+.alert-item .al-body .al-sub{font-size:10px;color:var(--t3);margin-top:1px}
+
+/* ==================== SOURCE + MATERIAL ==================== */
+.sm-layout{display:flex;gap:16px;height:calc(100vh - 140px);min-height:480px}
+.sm-side{width:220px;flex-shrink:0;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow-y:auto;padding:8px}
+.sm-side::-webkit-scrollbar{width:3px}
+.sm-side::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.04);border-radius:4px}
+.sm-side .sm-group{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:0.8px;padding:8px 10px 4px}
+.sm-side .sm-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;transition:all 0.15s;font-size:12px}
+.sm-side .sm-item:hover{background:rgba(255,255,255,0.03)}
+.sm-side .sm-item.active{background:var(--accent-dim);color:var(--accent)}
+.sm-side .sm-item .si-icon{font-size:16px;width:24px;text-align:center}
+.sm-side .sm-item .si-name{flex:1}
+.sm-side .sm-item .si-count{font-size:10px;color:var(--t3);background:rgba(255,255,255,0.04);padding:1px 6px;border-radius:8px}
+.sm-side .sm-item.active .si-count{background:rgba(28,198,212,0.12);color:var(--accent)}
+
+.sm-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.sm-header{display:flex;align-items:center;justify-content:space-between;padding:0 4px 12px;flex-shrink:0}
+.sm-header .smh-left{display:flex;align-items:center;gap:10px}
+.sm-header .smh-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(255,255,255,0.03)}
+.sm-header .smh-name{font-size:16px;font-weight:600}
+.sm-header .smh-desc{font-size:11px;color:var(--t2);margin-top:2px}
+.sm-wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;overflow-y:auto;padding:4px;flex:1}
+.sm-wp-grid::-webkit-scrollbar{width:3px}
+.sm-wp-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.04);border-radius:4px}
+.wp-card{display:flex;flex-direction:column;gap:0}
+.wp-card .wp-img-wrap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color 0.2s;line-height:0}
+.wp-card:hover .wp-img-wrap{border-color:var(--border2)}
+.wp-card .wp-img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--bg2)}
+.wp-card .wp-info{padding:4px 2px 0}
+.wp-card .wp-info .wp-t{font-size:11px;font-weight:500;margin-top:3px}
+.wp-card .wp-info .wp-date{font-size:10px;color:var(--t3)}
+.wp-empty{text-align:center;padding:40px;color:var(--t3);font-size:13px}
+
+/* Upload Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-bx{background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:24px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto}
+.modal-bx h3{font-size:15px;font-weight:600;margin-bottom:16px}
+.modal-bx .mb-field{margin-bottom:12px}
+.modal-bx .mb-field label{font-size:11px;color:var(--t2);display:block;margin-bottom:4px}
+.modal-bx .mb-field .inp{font-size:12px}
+.modal-bx .mb-field .img-preview{width:100%;aspect-ratio:16/9;border-radius:8px;object-fit:cover;background:var(--bg2);margin-top:6px;display:none}
+.modal-bx .mb-btns{display:flex;gap:10px;margin-top:16px}
+
+/* ==================== RULES ==================== */
+.rules-list{display:flex;flex-direction:column;gap:4px}
+.rule-card{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);transition:all 0.2s}
+.rule-card:hover{border-color:var(--border2);background:var(--card-hover)}
+.rule-card .rc-prio{font-size:11px;font-weight:600;color:var(--t3);background:rgba(255,255,255,0.03);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rule-card .rc-event{font-weight:500;font-size:12px;min-width:90px}
+.rule-card .rc-arrow{color:var(--t3);font-size:14px}
+.rule-card .rc-source{font-size:12px;color:var(--accent)}
+.rule-card .rc-actions{margin-left:auto;display:flex;gap:4px}
+.rule-card .rc-actions button{width:24px;height:24px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all 0.15s}
+.rule-card .rc-actions button:hover{border-color:var(--border2);color:var(--t1);background:rgba(255,255,255,0.03)}
+.rule-card .rc-actions button:disabled{opacity:0.2;cursor:not-allowed}
+
+/* ==================== EVENT LOG ==================== */
+.log-area{height:300px;overflow-y:auto;background:rgba(0,0,0,0.25);border-radius:var(--r-sm);padding:12px;font-family:var(--mono);font-size:11px;line-height:1.7}
+.log-area::-webkit-scrollbar{width:3px}
+.log-area::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.04);border-radius:4px}
+.log-entry{display:flex;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.015)}
+.log-entry .lt{color:var(--t3);white-space:nowrap;min-width:70px}
+.log-entry .lm{color:var(--t2)}
+.log-entry .lm .hl{color:var(--accent)}
+.log-entry .lm .ok{color:var(--green)}
+.log-entry .lm .fail{color:var(--red)}
+
+/* ==================== RESPONSIVE ==================== */
+@media(max-width:800px){
+  .nav{padding:0 12px}
+  .nav-tab{padding:6px 10px;font-size:11px}
+  .main{padding:12px}
+  .db-grid{grid-template-columns:1fr 1fr}
+  .db-bottom{grid-template-columns:1fr}
+  .sm-layout{flex-direction:column;height:auto}
+  .sm-side{width:100%;max-height:160px;display:flex;flex-wrap:wrap;gap:4px;padding:6px}
+  .sm-side .sm-group{width:100}
+  .sm-side .sm-item{flex:0 0 auto}
+  .sm-wp-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<div class="nav">
+  <div class="nav-logo"><span class="dot"></span> AI生态壁纸 · 运营后台</div>
+  <button class="nav-tab active" data-tab="dashboard">📊 数据看板</button>
+  <button class="nav-tab" data-tab="sources">📁 内容源与素材</button>
+  <button class="nav-tab" data-tab="rules">⚙️ 推荐规则</button>
+  <button class="nav-tab" data-tab="events">📋 事件日志</button>
+  <div class="nav-spacer"></div>
+  <div class="nav-user">👤 运营管理员</div>
+</div>
+
+<!-- Main -->
+<div class="main" id="mainArea">
+
+<!-- ======================== DASHBOARD ======================== -->
+<div class="tab-page active" id="page-dashboard">
+  <div class="flex justify-between items-center mb-12">
+    <div style="font-size:14px;font-weight:600">📊 运营数据总览</div>
+    <div class="db-period" id="periodBtns">
+      <button class="p-btn active" data-p="today">今日</button>
+      <button class="p-btn" data-p="7d">近7日</button>
+      <button class="p-btn" data-p="30d">近30日</button>
+    </div>
+  </div>
+
+  <div class="db-grid">
+    <div class="db-card"><div class="db-icon">🚀</div><div class="db-val" style="color:var(--accent)">78.5%</div><div class="db-lbl">功能开启率</div><div class="db-trend up">↑ 2.1% 较昨日</div></div>
+    <div class="db-card"><div class="db-icon">👆</div><div class="db-val" style="color:var(--blue)">12.3%</div><div class="db-lbl">浮层点击率</div><div class="db-trend down">↓ 0.4% 较昨日</div></div>
+    <div class="db-card"><div class="db-icon">🔄</div><div class="db-val" style="color:var(--green)">23.1%</div><div class="db-lbl">手动刷新率</div><div class="db-trend up">↑ 1.8% 较昨日</div></div>
+    <div class="db-card"><div class="db-icon">🔒</div><div class="db-val" style="color:var(--purple)">8.7%</div><div class="db-lbl">壁纸锁定率</div><div class="db-trend up">↑ 0.3% 较昨日</div></div>
+  </div>
+
+  <div class="db-bottom">
+    <div class="card db-chart-section">
+      <div class="card-hd">内容源展示占比</div>
+      <div id="sourceShare"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">系统监控 <span class="badge" style="background:rgba(232,84,74,0.12);color:var(--red)">1 项告警</span></div>
+      <div id="alerts">
+        <div class="alert-item err">
+          <span class="al-icon">⚠️</span>
+          <div class="al-body"><div class="al-title">潮汐接口异常</div><div class="al-sub">上次成功拉取: 2026-06-09 02:00 · 已重试 3 次</div></div>
+          <span class="tag red">高</span>
+        </div>
+        <div class="alert-item ok">
+          <span class="al-icon">✅</span>
+          <div class="al-body"><div class="al-title">推荐接口正常</div><div class="al-sub">P99 响应 156ms · 错误率 0.3%</div></div>
+        </div>
+        <div class="alert-item ok">
+          <span class="al-icon">✅</span>
+          <div class="al-body"><div class="al-title">主动服务连接正常</div><div class="al-sub">事件推送成功率 99.8% · 今日推送 12,795 次</div></div>
+        </div>
+        <div class="alert-item ok">
+          <span class="al-icon">✅</span>
+          <div class="al-body"><div class="al-title">AI 扩图服务正常</div><div class="al-sub">今日处理 24 张 · 平均耗时 1.2s/张</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-hd">推荐成功率</div>
+    <table class="w-full" style="border-collapse:collapse;font-size:12px">
+      <thead><tr style="color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)"><th style="padding:6px 8px;text-align:left">事件类型</th><th style="padding:6px 8px;text-align:right">推送量</th><th style="padding:6px 8px;text-align:right">成功率</th></tr></thead>
+      <tbody id="successTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ======================== SOURCES + MATERIALS ======================== -->
+<div class="tab-page" id="page-sources">
+  <div class="sm-layout">
+    <!-- Left sidebar -->
+    <div class="sm-side" id="smSide"></div>
+
+    <!-- Right content -->
+    <div class="sm-main" id="smMain">
+      <div class="sm-header" id="smHeader">
+        <div class="smh-left">
+          <div class="smh-icon" id="smhIcon">🌊</div>
+          <div>
+            <div class="smh-name" id="smhName">潮汐</div>
+            <div class="smh-desc" id="smhDesc">每日潮汐冥想壁纸</div>
+          </div>
+        </div>
+        <div class="flex gap-8">
+          <button class="btn green sm" id="aiGenBtn">🤖 AI 生成</button>
+          <button class="btn accent sm" id="uploadBtn">+ 上传壁纸</button>
+        </div>
+      </div>
+      <div class="sm-wp-grid" id="smWpGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal-bx">
+    <h3>📤 上传壁纸</h3>
+    <div class="mb-field"><label>壁纸图片</label><input type="file" accept="image/*" id="fileInput" style="display:none"><div style="display:flex;gap:8px"><button class="btn" id="filePickBtn" style="flex:1">📁 选择本地图片</button><input class="inp" id="upImg" placeholder="或输入图片 URL" style="flex:2"></div></div>
+    <div class="mb-field"><img class="img-preview" id="upPreview" alt=""></div>
+    <div class="mb-field"><label>壁纸标题</label><input class="inp" id="upTitle" placeholder="如：夏日精选"></div>
+    <div class="mb-field"><label>浮层文案</label><input class="inp" id="upText" placeholder="如：🌊 潮汐 · 放松一刻"></div>
+    <div class="mb-field"><label>所属内容源</label><select class="inp" id="upSource"></select></div>
+    <div class="mb-field"><label>状态</label><select class="inp" id="upStatus"><option value="已发布">已发布</option><option value="待审核">待审核</option></select></div>
+    <div class="mb-btns">
+      <button class="btn accent w-full" id="upConfirm">确认上传</button>
+      <button class="btn w-full" id="upCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== RULES ======================== -->
+<div class="tab-page" id="page-rules">
+  <div class="flex justify-between items-center mb-12">
+    <div style="font-size:14px;font-weight:600">⚙️ 推荐规则配置</div>
+    <button class="btn accent" id="addRuleBtn">+ 新增规则</button>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">事件 → 内容源映射 <span class="badge" style="background:rgba(255,255,255,0.04);color:var(--t2)">拖拽或点击上下箭头调整优先级</span></div>
+    <div class="rules-list" id="rulesList"></div>
+  </div>
+
+
+</div>
+
+<!-- Add Rule Modal -->
+<div class="modal-overlay" id="ruleModal">
+  <div class="modal-bx" style="max-width:400px">
+    <h3>📝 新增推荐规则</h3>
+    <div class="mb-field"><label>事件类型</label><select class="inp" id="rmEvent"></select></div>
+    <div class="mb-field"><label>匹配内容源</label><select class="inp" id="rmSource"></select></div>
+    <div class="mb-btns">
+      <button class="btn accent w-full" id="rmConfirm">确认添加</button>
+      <button class="btn w-full" id="rmCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== EVENT LOG ======================== -->
+<div class="tab-page" id="page-events">
+  <div class="flex justify-between items-center mb-12">
+    <div style="font-size:14px;font-weight:600">📋 事件推送日志</div>
+    <div class="flex gap-8">
+      <button class="btn accent" id="simEvBtn">🎯 模拟推送</button>
+      <button class="btn" id="clrLogBtn">清空</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex justify-between items-center mb-8">
+      <div class="card-hd" style="margin:0">实时处理流</div>
+      <div style="font-size:10px;color:var(--t3)">主动服务 → 运营端匹配 → 推荐响应</div>
+    </div>
+    <div class="log-area" id="logArea"></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ======================== DATA ========================
+const SOURCES = [
+  { id:'tidal', name:'潮汐', icon:'🌊', prio:5, type:'api', desc:'每日潮汐冥想壁纸', refresh:'daily', def:true },
+  { id:'festival', name:'节日壁纸', icon:'🎉', prio:1, type:'self', desc:'节日/节气主题壁纸', refresh:'event', def:true },
+  { id:'constellation', name:'星座壁纸', icon:'✨', prio:2, type:'self', desc:'星座主题壁纸', refresh:'weekly', def:true },
+  { id:'new_arrival', name:'壁纸上新', icon:'🆕', prio:3, type:'self', desc:'新壁纸批次推荐', refresh:'event', def:true },
+  { id:'commute_morning', name:'早通勤', icon:'🌅', prio:4, type:'scene', desc:'早通勤场景壁纸', refresh:'event', def:false },
+  { id:'commute_evening', name:'晚通勤', icon:'🌆', prio:4, type:'scene', desc:'晚通勤场景壁纸', refresh:'event', def:false },
+  { id:'night_driving', name:'夜间行车', icon:'🌙', prio:4, type:'scene', desc:'夜间行车场景壁纸', refresh:'event', def:false },
+  { id:'charging', name:'充电中', icon:'⚡', prio:4, type:'scene', desc:'充电场景壁纸', refresh:'event', def:false },
+  { id:'low_battery', name:'低电量', icon:'🔋', prio:4, type:'scene', desc:'低电量提示壁纸', refresh:'event', def:false },
+  { id:'weather_rainy', name:'雨天', icon:'🌧️', prio:4, type:'scene', desc:'雨天场景壁纸', refresh:'event', def:false },
+  { id:'weather_snowy', name:'雪天', icon:'❄️', prio:4, type:'scene', desc:'雪天场景壁纸', refresh:'event', def:false },
+  { id:'weather_foggy', name:'雾天', icon:'🌫️', prio:4, type:'scene', desc:'雾天场景壁纸', refresh:'event', def:false },
+];
+
+let nextWpId = 50;
+const WALLPAPERS = [
+  { id:1, src:'tidal', title:'晨间海浪', text:'潮汐 · 晨间冥想', img:'https://picsum.photos/id/1068/400/180', status:'已发布', date:'2026-06-10' },
+  { id:2, src:'tidal', title:'深海宁静', text:'潮汐 · 深海', img:'https://picsum.photos/id/1043/400/180', status:'已发布', date:'2026-06-09' },
+  { id:3, src:'festival', title:'春节·红运', text:'🎊 春节快乐', img:'https://picsum.photos/id/1084/400/180', status:'已发布', date:'2026-06-08' },
+  { id:4, src:'festival', title:'中秋·团圆', text:'🌕 中秋团圆', img:'https://picsum.photos/id/1025/400/180', status:'已发布', date:'2026-06-07' },
+  { id:5, src:'constellation', title:'双子座', text:'♊ 双子座 · 好奇探索', img:'https://picsum.photos/id/1067/400/180', status:'已发布', date:'2026-06-06' },
+  { id:6, src:'constellation', title:'天秤座', text:'♎ 天秤座 · 优雅平衡', img:'https://picsum.photos/id/1024/400/180', status:'待审核', date:'2026-06-05' },
+  { id:7, src:'new_arrival', title:'夏日精选', text:'🆕 夏日上新 · 绚烂一夏', img:'https://picsum.photos/id/1039/400/180', status:'已发布', date:'2026-06-10' },
+  { id:8, src:'new_arrival', title:'城市夜景', text:'🌃 城市系列 · 璀璨之夜', img:'https://picsum.photos/id/1022/400/180', status:'已发布', date:'2026-06-10' },
+  { id:9, src:'commute_morning', title:'阳光大道', text:'🌅 早安 · 开启新的一天', img:'https://picsum.photos/id/1015/400/180', status:'已发布', date:'2026-06-10' },
+  { id:10, src:'commute_evening', title:'落日归途', text:'🌆 夕阳伴你归途', img:'https://picsum.photos/id/1035/400/180', status:'已发布', date:'2026-06-09' },
+  { id:11, src:'night_driving', title:'星空 highway', text:'🌙 夜行 · 星光引路', img:'https://picsum.photos/id/1069/400/180', status:'已发布', date:'2026-06-08' },
+  { id:12, src:'charging', title:'绿色能量', text:'⚡ 电量补给中', img:'https://picsum.photos/id/1049/400/180', status:'已发布', date:'2026-06-08' },
+  { id:13, src:'low_battery', title:'电量告急', text:'🔋 电量不足 · 请及时充电', img:'https://picsum.photos/id/2/400/180', status:'已发布', date:'2026-06-07' },
+  { id:14, src:'weather_rainy', title:'雨中即景', text:'🌧️ 雨天路滑 · 小心驾驶', img:'https://picsum.photos/id/1055/400/180', status:'已发布', date:'2026-06-09' },
+  { id:15, src:'weather_snowy', title:'雪境', text:'❄️ 雪天 · 慢行', img:'https://picsum.photos/id/259/400/180', status:'待审核', date:'2026-06-06' },
+  { id:16, src:'weather_foggy', title:'雾隐山城', text:'🌫️ 雾天 · 谨慎驾驶', img:'https://picsum.photos/id/687/400/180', status:'待审核', date:'2026-06-05' },
+  { id:17, src:'tidal', title:'潮汐日落', text:'🌊 潮汐 · 日落冥想', img:'https://picsum.photos/id/1070/400/180', status:'已发布', date:'2026-06-10' },
+  { id:18, src:'festival', title:'端午·龙舟', text:'🐉 端午安康', img:'https://picsum.photos/id/1050/400/180', status:'待审核', date:'2026-06-10' },
+];
+
+const ALL_EVENTS = [
+  '节日','节气','壁纸上新','星座','早通勤','晚通勤','夜间行车','充电中','低电量','雨天','雪天','雾天','潮汐每日'
+];
+
+const EVT_SRC_MAP = {
+  '节日':'festival','节气':'festival','壁纸上新':'new_arrival','星座':'constellation',
+  '早通勤':'commute_morning','晚通勤':'commute_evening','夜间行车':'night_driving',
+  '充电中':'charging','低电量':'low_battery','雨天':'weather_rainy','雪天':'weather_snowy','雾天':'weather_foggy','潮汐每日':'tidal'
+};
+
+let RULES = ALL_EVENTS.map((ev, i) => ({
+  event: ev, source: EVT_SRC_MAP[ev], prio: i + 1
+}));
+
+// ======================== DOM ========================
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// ======================== NAV ========================
+$$('.nav-tab').forEach(t => {
+  t.onclick = () => {
+    $$('.nav-tab').forEach(x => x.classList.remove('active'));
+    $$('.tab-page').forEach(p => p.classList.remove('active'));
+    t.classList.add('active');
+    $(`#page-${t.dataset.tab}`).classList.add('active');
+  };
+});
+
+// ======================== DASHBOARD ========================
+function renderSourceShare() {
+  const items = [
+    { name:'潮汐', pct:32, color:'var(--accent)' },
+    { name:'节日壁纸', pct:24, color:'var(--blue)' },
+    { name:'场景壁纸', pct:18, color:'var(--green)' },
+    { name:'星座壁纸', pct:15, color:'var(--purple)' },
+    { name:'壁纸上新', pct:11, color:'var(--amber)' },
+  ];
+  $('#sourceShare').innerHTML = items.map(i => `
+    <div class="chart-item">
+      <span class="ci-lbl">${i.name}</span>
+      <div class="ci-bar"><div class="fill" style="width:${i.pct}%;background:${i.color}"></div></div>
+      <span class="ci-pct">${i.pct}%</span>
+    </div>
+  `).join('');
+}
+renderSourceShare();
+
+function renderSuccessTable() {
+  const data = [
+    { name:'🎉 节日/节气', sent:'1,284', rate:99.7, cls:'green' },
+    { name:'✨ 星座', sent:'856', rate:99.3, cls:'green' },
+    { name:'🆕 壁纸上新', sent:'423', rate:96.9, cls:'amber' },
+    { name:'🌅 行车场景', sent:'6,782', rate:96.3, cls:'green' },
+    { name:'🌊 潮汐', sent:'3,450', rate:99.9, cls:'green' },
+  ];
+  $('#successTable').innerHTML = data.map(d => `
+    <tr><td style="padding:6px 8px">${d.name}</td><td style="padding:6px 8px;text-align:right;color:var(--t2)">${d.sent}</td><td style="padding:6px 8px;text-align:right"><span class="tag ${d.cls}">${d.rate}%</span></td></tr>
+  `).join('');
+}
+renderSuccessTable();
+
+// Period buttons
+$$('#periodBtns .p-btn').forEach(b => {
+  b.onclick = () => {
+    $$('#periodBtns .p-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+  };
+});
+
+// ======================== SOURCES + MATERIALS ========================
+let selSrc = 'tidal';
+
+function renderSidebar() {
+  const side = $('#smSide');
+  const gen = SOURCES.filter(s => s.type !== 'scene');
+  const scenes = SOURCES.filter(s => s.type === 'scene');
+  side.innerHTML = `
+    <div class="sm-group">通用内容源</div>
+    ${gen.map(s => srcItem(s)).join('')}
+    <div class="sm-group" style="margin-top:6px">行车场景</div>
+    ${scenes.map(s => srcItem(s)).join('')}
+  `;
+  side.querySelectorAll('.sm-item').forEach(el => {
+    el.onclick = () => {
+      selSrc = el.dataset.id;
+      renderSidebar();
+      renderSourceContent();
+    };
+  });
+}
+
+function srcItem(s) {
+  const count = WALLPAPERS.filter(w => w.src === s.id).length;
+  return `<div class="sm-item ${selSrc === s.id ? 'active' : ''}" data-id="${s.id}">
+    <span class="si-icon">${s.icon}</span>
+    <span class="si-name">${s.name}</span>
+    <span class="si-count">${count}</span>
+  </div>`;
+}
+
+
+// Tidal 30-day AI generation history
+const TIDAL_HISTORY = Array.from({length: 30}, (_, i) => {
+  const d = new Date(); d.setDate(d.getDate() - i);
+  const r = Math.random();
+  const status = r > 0.15 ? 'success' : (r > 0.08 ? 'fail' : 'pending');
+  const texts = ['晨间海浪','深海冥想','日落潮汐','海风轻拂','碧波荡漾','星空海岸','晨光微曦','海天之境'];
+  return {
+    date: d.toISOString().slice(0, 10),
+    status,
+    text: status === 'success' ? ('潮汐 · ' + texts[i % texts.length]) : (status === 'fail' ? '接口异常' : '处理中'),
+    img: status === 'success' ? `https://picsum.photos/id/${(1068 + i) % 1084}/400/180` : null,
+    failReason: status === 'fail' ? ['潮汐API超时','AI扩图失败','图片审核未通过','数据拉取为空'][i % 4] : null,
+  };
+});
+function renderSourceContent() {
+  const s = SOURCES.find(x => x.id === selSrc);
+  if (!s) return;
+  $('#smhIcon').textContent = s.icon;
+  $('#smhName').textContent = s.name;
+  $('#smhDesc').textContent = s.desc;
+  const grid = $('#smWpGrid');
+  
+  // Special view for tidal: show 30-day AI generation history
+  if (selSrc === 'tidal') {
+    grid.innerHTML = TIDAL_HISTORY.map(h => {
+      const icon = h.status === 'success' ? '✅' : (h.status === 'fail' ? '❌' : '⏳');
+      const cls = h.status === 'success' ? 'green' : (h.status === 'fail' ? 'red' : 'amber');
+      return '<div class="wp-card">' +
+        '<div class="wp-img-wrap">' +
+          (h.img ? '<img class="wp-img" src="' + h.img + '" loading="lazy">' : '<div class="wp-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--t3);background:var(--bg2)">' + (h.status === 'fail' ? '❌' : '⏳') + '</div>') +
+        '</div>' +
+        '<div class="wp-info">' +
+          '<div class="wp-t truncate" style="display:flex;align-items:center;gap:4px">' + h.date + ' <span class="tag ' + cls + '">' + icon + ' ' + (h.status === 'success' ? '成功' : (h.status === 'fail' ? '失败' : '处理中')) + '</span></div>' +
+          '<div class="wp-date">' + h.text + (h.failReason ? ' · ' + h.failReason : '') + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('') +
+    '<div style="grid-column:1/-1;text-align:center;padding:12px;font-size:10px;color:var(--t3)">以上为近 30 日 AI 扩图记录</div>';
+    return;
+  }
+  
+  const walls = WALLPAPERS.filter(w => w.src === selSrc);
+  if (walls.length === 0) {
+    grid.innerHTML = '<div class="wp-empty">暂无壁纸素材，点击"上传壁纸"添加</div>';
+    return;
+  }
+  grid.innerHTML = walls.map(w => `
+    <div class="wp-card">
+      <div class="wp-img-wrap">
+        <img class="wp-img" src="${w.img}" alt="" loading="lazy">
+      </div>
+      <div class="wp-info">
+        <div class="wp-t truncate">${w.title}</div>
+        <div class="wp-date">${w.date}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+renderSidebar();
+renderSourceContent();
+
+// Upload
+$('#uploadBtn').onclick = () => {
+  $('#uploadModal').classList.add('open');
+  const sel = $('#upSource');
+  sel.innerHTML = SOURCES.map(s => `<option value="${s.id}" ${s.id === selSrc ? 'selected' : ''}>${s.icon} ${s.name}</option>`).join('');
+  $('#upPreview').style.display = 'none';
+};
+
+$('#upCancel').onclick = () => $('#uploadModal').classList.remove('open');
+$('#uploadModal').onclick = e => { if (e.target === e.currentTarget) $('#uploadModal').classList.remove('open'); };
+
+// Preview image URL
+$('#upImg').oninput = function() {
+  const p = $('#upPreview');
+  if (this.value.length > 20) { p.src = this.value; p.style.display = 'block'; }
+  else p.style.display = 'none';
+};
+const fileInput = $('#fileInput');
+const filePickBtn = $('#filePickBtn');
+filePickBtn.onclick = () => fileInput.click();
+fileInput.onchange = function() {
+  if (this.files && this.files[0]) {
+    const r = new FileReader();
+    r.onload = e => {
+      $('#upPreview').src = e.target.result;
+      $('#upPreview').style.display = 'block';
+    };
+    r.readAsDataURL(this.files[0]);
+  }
+};
+
+$('#upConfirm').onclick = () => {
+  const file = $('#fileInput').files[0];
+  let img = $('#upImg').value.trim();
+  if (file) {
+    // Use a sync-style read for simplicity; the FileReader already set the preview
+    // The data URL is already loaded into the preview img
+    img = $('#upPreview').src;
+  }
+  const title = $('#upTitle').value.trim();
+  const text = $('#upText').value.trim();
+  const src = $('#upSource').value;
+  const status = $('#upStatus').value;
+  if ((!img || img === $('#upPreview').src && !file) && !title) { alert('请选择图片并填写标题'); return; }
+  if (!img) { alert('请选择本地图片或输入 URL'); return; }
+  if (!title) { alert('请填写壁纸标题'); return; }
+  WALLPAPERS.push({ id: nextWpId++, src, title, text: text || title, img, status, date: new Date().toISOString().slice(0,10) });
+  $('#uploadModal').classList.remove('open');
+  $('#upImg').value = 'https://picsum.photos/id/'; $('#upTitle').value = ''; $('#upText').value = '';
+  renderSidebar();
+  renderSourceContent();
+};
+
+// AI Generate
+$('#aiGenBtn').onclick = () => {
+  const s = SOURCES.find(x => x.id === selSrc);
+  const themes = ['日出','山林','星空','城市','海洋','极光','花海','湖泊','沙漠','云海'];
+  const t = themes[Math.floor(Math.random() * themes.length)];
+  const texts = ['放松一刻','自然之美','宁静致远','每日精选'];
+  const txt = texts[Math.floor(Math.random() * texts.length)];
+  const newId = nextWpId++;
+  WALLPAPERS.push({
+    id:newId, src:selSrc, title:`AI · ${t}`,
+    text:`🤖 AI生成 · ${txt}`, img:`https://picsum.photos/id/${20 + newId}/400/180`,
+    status:'待审核', date:new Date().toISOString().slice(0,10)
+  });
+  renderSidebar();
+  renderSourceContent();
+};
+
+// ======================== RULES ========================
+function renderRules() {
+  const list = $('#rulesList');
+  list.innerHTML = RULES.map((r, i) => {
+    const src = SOURCES.find(s => s.id === r.source);
+    return `<div class="rule-card">
+      <span class="rc-prio">${i + 1}</span>
+      <span class="rc-event">${r.event}</span>
+      <span class="rc-arrow">→</span>
+      <span class="rc-source">${src ? src.icon + ' ' + src.name : r.source}</span>
+      <div class="rc-actions">
+        <button class="rule-up" data-i="${i}" ${i === 0 ? 'disabled' : ''}>▲</button>
+        <button class="rule-down" data-i="${i}" ${i === RULES.length - 1 ? 'disabled' : ''}>▼</button>
+      </div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.rule-up').forEach(b => b.onclick = () => moveRule(parseInt(b.dataset.i), -1));
+  list.querySelectorAll('.rule-down').forEach(b => b.onclick = () => moveRule(parseInt(b.dataset.i), 1));
+  
+  // Sources reference
+}
+
+function moveRule(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= RULES.length) return;
+  [RULES[i], RULES[j]] = [RULES[j], RULES[i]];
+  renderRules();
+}
+
+renderRules();
+
+// Add rule
+$('#addRuleBtn').onclick = () => {
+  $('#ruleModal').classList.add('open');
+  const selEv = $('#rmEvent');
+  const used = RULES.map(r => r.event);
+  selEv.innerHTML = ALL_EVENTS.filter(e => !used.includes(e)).map(e => `<option value="${e}">${e}</option>`).join('') || '<option disabled>已全部添加</option>';
+  const selSrc = $('#rmSource');
+  selSrc.innerHTML = SOURCES.map(s => `<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+};
+
+$('#rmCancel').onclick = () => $('#ruleModal').classList.remove('open');
+$('#ruleModal').onclick = e => { if (e.target === e.currentTarget) $('#ruleModal').classList.remove('open'); };
+
+$('#rmConfirm').onclick = () => {
+  const ev = $('#rmEvent').value;
+  const src = $('#rmSource').value;
+  if (!ev) return;
+  RULES.push({ event: ev, source: src, prio: RULES.length + 1 });
+  renderRules();
+  $('#ruleModal').classList.remove('open');
+};
+
+// ======================== EVENT LOG ========================
+let logCount = 0;
+function addLog(icon, msg) {
+  const el = $('#logArea');
+  const t = new Date().toLocaleTimeString();
+  el.innerHTML += `<div class="log-entry"><span class="lt">${t}</span><span class="lm">${icon} ${msg}</span></div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+const SIM_EVENTS = [
+  { label:'🎉 节日', icon:'🎉', srcId:'festival' },
+  { label:'🎋 节气', icon:'🎋', srcId:'festival' },
+  { label:'🆕 壁纸上新', icon:'🆕', srcId:'new_arrival' },
+  { label:'✨ 星座', icon:'✨', srcId:'constellation' },
+  { label:'🌅 早通勤', icon:'🌅', srcId:'commute_morning' },
+  { label:'🌆 晚通勤', icon:'🌆', srcId:'commute_evening' },
+  { label:'🌙 夜间行车', icon:'🌙', srcId:'night_driving' },
+  { label:'⚡ 充电中', icon:'⚡', srcId:'charging' },
+  { label:'🔋 低电量', icon:'🔋', srcId:'low_battery' },
+  { label:'🌧️ 雨天', icon:'🌧️', srcId:'weather_rainy' },
+  { label:'❄️ 雪天', icon:'❄️', srcId:'weather_snowy' },
+  { label:'🌫️ 雾天', icon:'🌫️', srcId:'weather_foggy' },
+  { label:'🌊 潮汐每日', icon:'🌊', srcId:'tidal' },
+];
+
+$('#simEvBtn').onclick = () => {
+  const ev = SIM_EVENTS[Math.floor(Math.random() * SIM_EVENTS.length)];
+  addLog('📤', `<span class="hl">${ev.label}</span> 事件推送 → 运营端`);
+  setTimeout(() => {
+    const src = SOURCES.find(s => s.id === ev.srcId);
+    if (src) {
+      const wp = WALLPAPERS.filter(w => w.src === src.id);
+      addLog('✅', `匹配 → <span class="ok">${src.icon} ${src.name}</span> · action: <span class="hl">direct_replace</span>`);
+      if (wp.length) setTimeout(() => addLog('🖼️', `推送壁纸: "${wp[0].text}"`), 400);
+    } else {
+      addLog('⚠️', '未找到匹配内容源 · 降级为默认品牌壁纸');
+    }
+  }, 500);
+};
+
+$('#clrLogBtn').onclick = () => { $('#logArea').innerHTML = ''; };
+
+// Init logs
+['🌊 潮汐每日更新 · 定时拉取成功 → AI 扩图完成 → 入库',
+ '🎉 端午节事件 · 主动服务推送 → 节日壁纸匹配 → direct_replace',
+ '🌅 早通勤事件 · 场景壁纸已启用 → 匹配成功 → 推送',
+ '⚡ 充电事件 · 行驶中 → 事件已缓存，驻车后推送',
+ '🆕 壁纸上新 · 运营已发布新批次 → 生成上新事件',
+ '🌙 夜间行车 · 已推送 → 匹配夜间行车壁纸',
+].forEach((m, i) => setTimeout(() => addLog('📋', m), i * 250));
+
+// Auto simulate
+let simCount = 0;
+const simInt = setInterval(() => {
+  if (simCount >= 2) { clearInterval(simInt); return; }
+  $('#simEvBtn').click();
+  simCount++;
+}, 1200);
+</script>
+</body>
+</html>

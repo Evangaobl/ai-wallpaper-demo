@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 生态壁纸 - 车载桌面模拟器</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg-primary: #080a0f;
+    --bg-secondary: #101218;
+    --bg-panel: #14171f;
+    --border-subtle: rgba(255,255,255,0.07);
+    --text-primary: #eaedf0;
+    --text-secondary: #8b9098;
+    --accent: #1cc6d4;
+    --accent-dim: rgba(28,198,212,0.15);
+    --accent-glow: rgba(28,198,212,0.2);
+    --danger: #e8544a;
+    --warning: #f5a623;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+  
+  body {
+    font-family: var(--font);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    gap: 20px;
+    user-select: none;
+  }
+
+  /* ========== Screen Bezel ========== */
+  .display-wrapper {
+    flex: 1;
+    max-width: 1120px;
+    aspect-ratio: 16 / 7.2;
+    background: linear-gradient(145deg, #1a1d27, #0e1018);
+    border-radius: 28px;
+    padding: 18px;
+    box-shadow: 
+      0 30px 100px rgba(0,0,0,0.7),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+  }
+
+  .display-wrapper::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 26px;
+    border: 1px solid rgba(255,255,255,0.03);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .car-display {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    border-radius: 18px;
+  }
+
+  /* Wallpaper carousel */
+  .wp-track {
+    display: flex;
+    height: 100%;
+    transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: transform;
+  }
+
+  .wp-slide {
+    flex: 0 0 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .wp-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* AI badge */
+  .ai-badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(28,198,212,0.35);
+    border-radius: 22px;
+    padding: 7px 16px 7px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    color: var(--accent);
+    display: none;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+  }
+  .ai-badge .pulse {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px 1px var(--accent-glow);
+    animation: ai-pulse 2s ease-in-out infinite;
+  }
+  @keyframes ai-pulse {
+    0%, 100% { opacity: 0.3; box-shadow: 0 0 4px 0px var(--accent-glow); }
+    50% { opacity: 1; box-shadow: 0 0 10px 3px var(--accent-glow); }
+  }
+
+  /* Page dots */
+  .page-dots {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+  }
+  .page-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    cursor: pointer;
+    transition: all 0.35s;
+    border: none;
+  }
+  .page-dot.active { 
+    width: 22px; 
+    border-radius: 4px; 
+    background: rgba(255,255,255,0.8); 
+  }
+  .page-dot.ai-dot.active { 
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  .page-dot:hover { background: rgba(255,255,255,0.35); }
+
+  /* Info overlay (PRD 3.2.1) */
+  .info-overlay {
+    position: absolute;
+    bottom: 72px;
+    left: 28px;
+    z-index: 10;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 260px;
+    border: 1px solid rgba(255,255,255,0.06);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+    pointer-events: none;
+  }
+  .info-overlay.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .info-overlay .src-icon {
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+  .info-overlay .src-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+    line-height: 1.3;
+    letter-spacing: 0.2px;
+  }
+  .info-overlay .lock-tag {
+    font-size: 11px;
+    color: var(--warning);
+    background: rgba(245,166,35,0.12);
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 4px;
+    white-space: nowrap;
+    display: none;
+  }
+
+  /* Wallpaper action buttons (换一张 / 锁定) */
+  .wp-actions {
+    position: absolute;
+    bottom: 72px;
+    right: 28px;
+    z-index: 10;
+    display: none;
+    gap: 8px;
+  }
+  .wp-actions.visible { display: flex; }
+  .wp-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font);
+    letter-spacing: 0.3px;
+  }
+  .wp-btn:hover { 
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.15);
+  }
+  .wp-btn:active { transform: scale(0.95); }
+  .wp-btn.primary { 
+    border-color: rgba(28,198,212,0.35);
+    color: var(--accent);
+  }
+  .wp-btn.primary:hover { background: rgba(28,198,212,0.12); }
+  .wp-btn.locked { 
+    border-color: rgba(245,166,35,0.35);
+    color: var(--warning);
+  }
+  .wp-btn.locked:hover { background: rgba(245,166,35,0.12); }
+
+  /* ========== Panel ========== */
+  .panel {
+    width: 300px;
+    height: 100%;
+    max-height: calc(100vh - 40px);
+    background: var(--bg-panel);
+    border-radius: 24px;
+    border: 1px solid var(--border-subtle);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .panel::-webkit-scrollbar { width: 3px; }
+  .panel::-webkit-scrollbar-track { background: transparent; }
+  .panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 4px; }
+
+  .panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 4px;
+  }
+  .panel-title .tag {
+    font-size: 9px;
+    background: var(--accent);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .section {
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    border: 1px solid var(--border-subtle);
+  }
+  .section-hd {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+
+  /* Event buttons */
+  .event-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .ev-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 9px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: rgba(255,255,255,0.02);
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font);
+  }
+  .ev-btn:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: var(--text-primary); }
+  .ev-btn:active { transform: scale(0.97); }
+  .ev-btn .ei { font-size: 14px; }
+  .ev-btn.on {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  /* Current event display */
+  .cur-ev {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.25);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+  }
+  .cur-ev .cei { font-size: 16px; }
+  .cur-ev .cn { color: var(--text-primary); font-weight: 500; }
+  .cur-ev .cz { color: var(--text-secondary); font-style: italic; }
+
+  /* Priority list */
+  .prio-list { display: flex; flex-direction: column; gap: 3px; }
+  .prio-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--text-secondary);
+    padding: 4px 6px; border-radius: 5px;
+    transition: background 0.3s;
+  }
+  .prio-item .pn {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .prio-item.hi { background: var(--accent-dim); color: var(--text-primary); }
+  .prio-item.hi .pn { background: var(--accent); color: #000; }
+
+  /* Toggle row */
+  .tog-r {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 5px 0;
+  }
+  .tog-r .lbl { font-size: 12px; color: var(--text-primary); font-weight: 500; }
+  .tog-r .dsc { font-size: 10px; color: var(--text-secondary); margin-top: 1px; }
+
+  .sw {
+    position: relative; width: 36px; height: 20px;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .sw input { opacity: 0; width: 0; height: 0; }
+  .sw .sl {
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px; transition: 0.3s;
+  }
+  .sw .sl::before {
+    content: "";
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: #aaa;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+  .sw input:checked + .sl { background: var(--accent); }
+  .sw input:checked + .sl::before { background: #fff; transform: translateX(16px); }
+
+  /* Checkbox group */
+  .chk-grp { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .chk-l {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--text-secondary);
+    padding: 4px 9px; border-radius: 6px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-subtle);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .chk-l:hover { background: rgba(255,255,255,0.04); }
+  .chk-l.on { 
+    border-color: rgba(28,198,212,0.3); 
+    color: var(--text-primary); 
+    background: var(--accent-dim);
+  }
+  .chk-l input { display: none; }
+  .chk-l .cd {
+    width: 10px; height: 10px; border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7px; transition: all 0.2s;
+  }
+  .chk-l.on .cd { background: var(--accent); border-color: var(--accent); }
+
+  /* Modal */
+  .modal-ov {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-ov.open { display: flex; }
+  .modal-bx {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px; padding: 24px;
+    max-width: 340px; width: 90%; text-align: center;
+  }
+  .modal-bx h3 { font-size: 15px; margin-bottom: 8px; font-weight: 600; }
+  .modal-bx p { font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5; }
+  .modal-bx .mb-btns { display: flex; gap: 10px; }
+  .modal-bx .mb-btns .btn { flex: 1; padding: 9px; font-size: 12px; }
+
+  .btn {
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: rgba(255,255,255,0.02);
+    color: var(--text-primary);
+    cursor: pointer; transition: all 0.2s;
+    font-family: var(--font);
+    text-align: center;
+  }
+  .btn:hover { background: rgba(255,255,255,0.05); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .btn.primary:hover { background: rgba(28,198,212,0.2); }
+
+  @media (max-width: 820px) {
+    body { flex-direction: column; padding: 10px; gap: 10px; }
+    .display-wrapper { max-width: 100%; aspect-ratio: 16/9; flex: none; width: 100%; padding: 10px; border-radius: 18px; }
+    .panel { width: 100%; max-height: 260px; height: auto; border-radius: 16px; padding: 14px; }
+    .info-overlay { bottom: 56px; left: 16px; }
+    .wp-actions { bottom: 56px; right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="display-wrapper">
+  <div class="car-display" id="carDisplay">
+    <div class="wp-track" id="wpTrack"></div>
+
+    <div class="ai-badge" id="aiBadge"><span class="pulse"></span> AI 生态壁纸</div>
+
+    <div class="info-overlay" id="infoOverlay">
+      <div class="src-icon" id="srcIcon">🌊</div>
+      <span class="src-text" id="srcText">潮汐 · 放松一刻</span>
+      <span class="lock-tag" id="lockTag">🔒 已锁定</span>
+    </div>
+
+    <div class="wp-actions" id="wpActions">
+      <button class="wp-btn primary" id="refreshBtn">🔄 换一张</button>
+      <button class="wp-btn" id="lockBtn">🔒 锁定</button>
+    </div>
+
+    <div class="page-dots" id="pageDots"></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">🎛️ 控制面板 <span class="tag">Demo</span></div>
+
+  <div class="section">
+    <div class="section-hd">当前优先级事件</div>
+    <div class="cur-ev" id="curEv">
+      <span class="cei">⏸️</span>
+      <span class="cz">无活跃事件</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd">模拟事件触发 <span style="color:var(--text-secondary);font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（点击切换）</span></div>
+    <div class="event-grid" id="evGrid">
+      <button class="ev-btn" data-ev="festival"><span class="ei">🎉</span> 节日/节气</button>
+      <button class="ev-btn" data-ev="constellation"><span class="ei">✨</span> 星座</button>
+      <button class="ev-btn" data-ev="new_arrival"><span class="ei">🆕</span> 壁纸上新</button>
+      <button class="ev-btn" data-ev="commute_morning"><span class="ei">🌅</span> 早通勤</button>
+      <button class="ev-btn" data-ev="commute_evening"><span class="ei">🌆</span> 晚通勤</button>
+      <button class="ev-btn" data-ev="charging"><span class="ei">⚡</span> 充电中</button>
+      <button class="ev-btn" data-ev="weather_rainy"><span class="ei">🌧️</span> 雨天</button>
+      <button class="ev-btn" data-ev="tidal"><span class="ei">🌊</span> 潮汐每日</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd">事件优先级参考</div>
+    <div class="prio-list" id="prioList">
+      <div class="prio-item" data-p="1"><span class="pn">1</span> 节日 / 节气</div>
+      <div class="prio-item" data-p="2"><span class="pn">2</span> 星座起始日</div>
+      <div class="prio-item" data-p="3"><span class="pn">3</span> 壁纸上新</div>
+      <div class="prio-item" data-p="4"><span class="pn">4</span> 行车场景（通勤/充电/天气）</div>
+      <div class="prio-item" data-p="5"><span class="pn">5</span> 潮汐每日更新</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd">用户设置</div>
+    <div class="tog-r">
+      <div><div class="lbl">AI 壁纸开关</div><div class="dsc">关闭后显示默认壁纸</div></div>
+      <label class="sw"><input type="checkbox" id="featureToggle" checked><span class="sl"></span></label>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd">内容源偏好 <span style="color:var(--text-secondary);font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（取消勾选可过滤）</span></div>
+    <div class="chk-grp" id="srcGroup">
+      <label class="chk-l on" data-src="tidal"><input type="checkbox" checked><span class="cd">✓</span> 🌊 潮汐</label>
+      <label class="chk-l on" data-src="festival"><input type="checkbox" checked><span class="cd">✓</span> 🎉 节日</label>
+      <label class="chk-l on" data-src="constellation"><input type="checkbox" checked><span class="cd">✓</span> ✨ 星座</label>
+      <label class="chk-l on" data-src="new_arrival"><input type="checkbox" checked><span class="cd">✓</span> 🆕 上新</label>
+      <label class="chk-l on" data-src="scene"><input type="checkbox" checked><span class="cd">✓</span> 🚗 场景</label>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="confirmModal">
+  <div class="modal-bx">
+    <h3>🔄 确认操作</h3>
+    <p id="modalMsg">当前壁纸已锁定，刷新将自动解锁，是否继续？</p>
+    <div class="mb-btns">
+      <button class="btn" id="modalCancel">取消</button>
+      <button class="btn primary" id="modalConfirm">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+const IMGS = {
+  // Default wallpapers for 8 slots (picsum.photos)
+  def: [
+    "https://picsum.photos/id/1015/1920/720",
+    "https://picsum.photos/id/1016/1920/720",
+    "https://picsum.photos/id/1018/1920/720",
+    "https://picsum.photos/id/1020/1920/720",
+    "https://picsum.photos/id/1022/1920/720",
+    "https://picsum.photos/id/1024/1920/720",
+    "https://picsum.photos/id/1025/1920/720",
+    "https://picsum.photos/id/1035/1920/720",
+  ],
+  // Default AI wallpaper
+  ai: "https://picsum.photos/id/1039/1920/720",
+  // Event wallpapers
+  ev: {
+    commute_morning: "https://picsum.photos/id/1015/1920/720",
+    commute_evening: "https://picsum.photos/id/1035/1920/720",
+    festival: "https://picsum.photos/id/1084/1920/720",
+    constellation: "https://picsum.photos/id/1067/1920/720",
+    new_arrival: "https://picsum.photos/id/1039/1920/720",
+    charging: "https://picsum.photos/id/1049/1920/720",
+    weather_rainy: "https://picsum.photos/id/1043/1920/720",
+    tidal: "https://picsum.photos/id/1068/1920/720",
+  }
+};
+
+const EVENTS = {
+  commute_morning: { label: '早通勤', icon: '🌅', cs: 'scene', prio: 4, txt: '早安 · 开启新的一天', ci: '🚗' },
+  commute_evening: { label: '晚通勤', icon: '🌆', cs: 'scene', prio: 4, txt: '夕阳伴你归途', ci: '🚗' },
+  festival: { label: '节日/节气', icon: '🎉', cs: 'festival', prio: 1, txt: '🎊 春节快乐 · 万象更新', ci: '🎊' },
+  constellation: { label: '星座', icon: '✨', cs: 'constellation', prio: 2, txt: '♊ 双子座 · 好奇探索', ci: '♊' },
+  new_arrival: { label: '壁纸上新', icon: '🆕', cs: 'new_arrival', prio: 3, txt: '🆕 新壁纸已上线', ci: '🆕' },
+  charging: { label: '充电中', icon: '⚡', cs: 'scene', prio: 4, txt: '⚡ 电量补给中 · 稍候出发', ci: '⚡' },
+  weather_rainy: { label: '雨天', icon: '🌧️', cs: 'scene', prio: 4, txt: '🌧️ 雨天路滑 · 小心驾驶', ci: '🌧️' },
+  tidal: { label: '潮汐每日', icon: '🌊', cs: 'tidal', prio: 5, txt: '潮汐 · 放松一刻', ci: '🌊' },
+};
+
+const AI_SLOT = 4; // 0-based, 5th slot
+
+const STATE = {
+  idx: AI_SLOT,
+  active: [],
+  enabled: true,
+  locked: false,
+  sources: ['tidal','festival','constellation','new_arrival','scene'],
+  current: null,
+};
+
+// ===================== DOM =====================
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const track = $('#wpTrack');
+const dots = $('#pageDots');
+const ov = $('#infoOverlay');
+const si = $('#srcIcon');
+const st = $('#srcText');
+const lt = $('#lockTag');
+const badge = $('#aiBadge');
+const acts = $('#wpActions');
+const curEv = $('#curEv');
+const modal = $('#confirmModal');
+const modalMsg = $('#modalMsg');
+
+// ===================== RENDER =====================
+function render() {
+  track.innerHTML = '';
+  dots.innerHTML = '';
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'wp-slide';
+    const img = document.createElement('img');
+    img.src = IMGS.def[i];
+    img.alt = '';
+    img.draggable = false;
+    if (i === AI_SLOT) img.id = 'aiImg';
+    s.appendChild(img);
+    track.appendChild(s);
+    const d = document.createElement('button');
+    d.className = 'page-dot' + (i === AI_SLOT ? ' ai-dot' : '');
+    d.dataset.i = i;
+    d.onclick = () => go(i);
+    dots.appendChild(d);
+  }
+  updDots();
+  updPos();
+}
+
+function go(i) {
+  STATE.idx = i;
+  updPos();
+  updDots();
+  updUI();
+}
+
+function updPos() { track.style.transform = `translateX(-${STATE.idx * 100}%)`; }
+function updDots() { $$('.page-dot').forEach((d,i) => d.classList.toggle('active', i === STATE.idx)); }
+
+function updUI() {
+  const isAI = STATE.idx === AI_SLOT;
+  const has = STATE.current && STATE.enabled;
+  badge.style.display = isAI && STATE.enabled ? 'flex' : 'none';
+  ov.classList.toggle('visible', isAI && has);
+  acts.classList.toggle('visible', isAI && STATE.enabled);
+  if (!has) return;
+  si.textContent = STATE.current.ci || '🌍';
+  st.textContent = STATE.current.txt || 'AI 生态壁纸';
+  lt.style.display = STATE.locked ? 'inline' : 'none';
+}
+
+function updBtn() {
+  const lb = $('#lockBtn');
+  if (STATE.locked) {
+    lb.textContent = '🔓 解锁';
+    lb.className = 'wp-btn locked';
+  } else {
+    lb.textContent = '🔒 锁定';
+    lb.className = 'wp-btn primary';
+  }
+}
+
+function setWall(url, txt, ci) {
+  STATE.current = { url, txt, ci };
+  const img = $('#aiImg');
+  if (img && STATE.enabled) {
+    img.style.transition = 'opacity 0.8s ease';
+    img.style.opacity = '0.2';
+    img.src = url;
+    img.onload = () => { img.style.opacity = '1'; };
+  }
+  updUI();
+}
+
+function setDef() {
+  setWall(IMGS.ai, 'AI 生态壁纸 · 为您精选', '🌍');
+}
+
+// ===================== EVENT ENGINE =====================
+function rec(ek) {
+  const e = EVENTS[ek];
+  if (!e || !STATE.sources.includes(e.cs)) return null;
+  return { url: IMGS.ev[ek], txt: e.txt, ci: e.ci, cs: e.cs };
+}
+
+function runEngine() {
+  if (STATE.active.length === 0) {
+    showEv(null);
+    hiPrio(null);
+    if (!STATE.locked) setDef();
+    return;
+  }
+  const sorted = STATE.active.map(k => ({ k, e: EVENTS[k] })).filter(x => x.e).sort((a,b) => a.e.prio - b.e.prio);
+  if (!sorted.length) return;
+  const top = sorted[0];
+  showEv(top.k);
+  hiPrio(top.e.prio);
+  if (!STATE.locked && STATE.sources.includes(top.e.cs)) {
+    const wp = rec(top.k);
+    if (wp) setWall(wp.url, wp.txt, wp.ci);
+  }
+}
+
+function toggleEv(ek) {
+  const i = STATE.active.indexOf(ek);
+  if (i >= 0) STATE.active.splice(i, 1); else STATE.active.push(ek);
+  $$('.ev-btn').forEach(b => b.classList.toggle('on', STATE.active.includes(b.dataset.ev)));
+  runEngine();
+}
+
+function showEv(k) {
+  if (!k) { curEv.innerHTML = '<span class="cei">⏸️</span><span class="cz">无活跃事件</span>'; return; }
+  const e = EVENTS[k];
+  curEv.innerHTML = `<span class="cei">${e.icon}</span><span class="cn">优先级${e.prio} · ${e.label}</span>`;
+}
+
+function hiPrio(p) {
+  $$('.prio-item').forEach(el => el.classList.toggle('hi', p !== null && parseInt(el.dataset.p) === p));
+}
+
+// ===================== REFRESH / LOCK =====================
+function doRefresh() {
+  if (STATE.active.length) {
+    const sorted = STATE.active.map(k => ({ k, e: EVENTS[k] })).filter(x => x.e).sort((a,b) => a.e.prio - b.e.prio);
+    if (sorted.length && STATE.sources.includes(sorted[0].e.cs)) {
+      const wp = rec(sorted[0].k);
+      if (wp) setWall(wp.url, wp.txt, wp.ci);
+    }
+  } else {
+    const srcs = STATE.sources;
+    const curSrc = STATE.current?.cs;
+    const idx = curSrc ? srcs.indexOf(curSrc) : -1;
+    const nxt = srcs[(idx + 1) % srcs.length];
+    const m = Object.entries(EVENTS).find(([k,v]) => v.cs === nxt);
+    if (m) { const wp = rec(m[0]); if (wp) setWall(wp.url, wp.txt, wp.ci); }
+  }
+  go(AI_SLOT);
+}
+
+// ===================== EVENTS =====================
+$$('.ev-btn').forEach(b => b.onclick = () => toggleEv(b.dataset.ev));
+
+$('#featureToggle').onchange = e => {
+  STATE.enabled = e.target.checked;
+  const img = $('#aiImg');
+  if (!STATE.enabled) {
+    STATE.current = null;
+    if (img) { img.src = IMGS.def[AI_SLOT]; img.style.opacity = '1'; img.style.transition = ''; }
+  } else {
+    if (!STATE.current) setDef();
+    if (img && STATE.current) { img.src = STATE.current.url; img.style.opacity = '1'; }
+  }
+  updUI();
+};
+
+$('#refreshBtn').onclick = () => {
+  if (!STATE.enabled) return;
+  if (STATE.locked) {
+    modalMsg.textContent = '当前壁纸已锁定，刷新将自动解锁，是否继续？';
+    modal.classList.add('open');
+    modal.dataset.action = 'refresh';
+    return;
+  }
+  doRefresh();
+};
+
+$('#lockBtn').onclick = () => {
+  STATE.locked = !STATE.locked;
+  updBtn();
+  updUI();
+};
+
+$('#modalCancel').onclick = () => modal.classList.remove('open');
+$('#modalConfirm').onclick = () => {
+  modal.classList.remove('open');
+  if (modal.dataset.action === 'refresh') {
+    STATE.locked = false;
+    updBtn();
+    doRefresh();
+  }
+};
+modal.onclick = e => { if (e.target === modal) modal.classList.remove('open'); };
+
+$$('#srcGroup .chk-l').forEach(l => {
+  const cb = l.querySelector('input');
+  cb.onchange = e => {
+    const src = l.dataset.src;
+    if (e.target.checked) {
+      if (!STATE.sources.includes(src)) STATE.sources.push(src);
+      l.classList.add('on');
+    } else {
+      if (STATE.sources.length <= 1) { cb.checked = true; return; }
+      STATE.sources = STATE.sources.filter(s => s !== src);
+      l.classList.remove('on');
+    }
+    if (STATE.active.length) runEngine();
+  };
+});
+
+// Keyboard
+document.onkeydown = e => {
+  if (e.key === 'ArrowLeft' && STATE.idx > 0) go(STATE.idx - 1);
+  if (e.key === 'ArrowRight' && STATE.idx < 7) go(STATE.idx + 1);
+};
+
+// Touch/mouse swipe
+let tx = 0, ty = 0, mx = 0, md = false;
+const D = $('#carDisplay');
+D.addEventListener('touchstart', e => { tx = e.changedTouches[0].screenX; }, { passive: true });
+D.addEventListener('touchend', e => {
+  const d = tx - e.changedTouches[0].screenX;
+  if (Math.abs(d) > 30) {
+    if (d > 0 && STATE.idx < 7) go(STATE.idx + 1);
+    else if (d < 0 && STATE.idx > 0) go(STATE.idx - 1);
+  }
+}, { passive: true });
+D.addEventListener('mousedown', e => { md = true; mx = e.screenX; });
+D.addEventListener('mouseup', e => {
+  if (!md) return; md = false;
+  const d = mx - e.screenX;
+  if (Math.abs(d) > 30) {
+    if (d > 0 && STATE.idx < 7) go(STATE.idx + 1);
+    else if (d < 0 && STATE.idx > 0) go(STATE.idx - 1);
+  }
+});
+D.addEventListener('mouseleave', () => { md = false; });
+
+// ===================== INIT =====================
+render();
+setDef();
+go(AI_SLOT);
+updBtn();
+</script>
+</body>
+</html>
