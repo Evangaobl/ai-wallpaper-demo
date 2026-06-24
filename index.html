@@ -531,14 +531,14 @@
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-hd">内容源偏好 <span style="color:var(--text-secondary);font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（取消勾选可过滤）</span></div>
-    <div class="chk-grp" id="srcGroup">
-      <label class="chk-l on" data-src="tidal"><input type="checkbox" checked><span class="cd">✓</span> 🌊 潮汐</label>
-      <label class="chk-l on" data-src="festival"><input type="checkbox" checked><span class="cd">✓</span> 🎉 节日</label>
-      <label class="chk-l on" data-src="constellation"><input type="checkbox" checked><span class="cd">✓</span> ✨ 星座</label>
-      <label class="chk-l on" data-src="new_arrival"><input type="checkbox" checked><span class="cd">✓</span> 🆕 上新</label>
-      <label class="chk-l on" data-src="scene"><input type="checkbox" checked><span class="cd">✓</span> 🚗 场景</label>
+    <div class="section">
+    <div class="section-hd">偏好类型 <span style="color:var(--text-secondary);font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（开启/关闭可选）</span></div>
+    <div class="chk-grp" id="prefGroup">
+      <label class="chk-l on" data-pref="meditation"><input type="checkbox" checked><span class="cd">✓</span> 🧘 自然冥想</label>
+      <label class="chk-l on" data-pref="festive"><input type="checkbox" checked><span class="cd">✓</span> 🎊 节日氛围</label>
+      <label class="chk-l on" data-pref="astro"><input type="checkbox" checked><span class="cd">✓</span> 🔮 星座探索</label>
+      <label class="chk-l on" data-pref="new"><input type="checkbox" checked><span class="cd">✓</span> 💫 新品推荐</label>
+      <label class="chk-l on" data-pref="scenic"><input type="checkbox" checked><span class="cd">✓</span> 🛣️ 出行相伴</label>
     </div>
   </div>
 </div>
@@ -594,6 +594,15 @@ const EVENTS = {
   tidal: { label: '潮汐每日', icon: '🌊', cs: 'tidal', prio: 5, txt: '潮汐 · 放松一刻', ci: '🌊' },
 };
 
+const PREF_TYPES = {
+  meditation: 'tidal',
+  festive: 'festival',
+  astro: 'constellation',
+  new: 'new_arrival',
+  scenic: 'scene',
+};
+
+
 const AI_SLOT = 4; // 0-based, 5th slot
 
 const STATE = {
@@ -601,7 +610,7 @@ const STATE = {
   active: [],
   enabled: true,
   locked: false,
-  sources: ['tidal','festival','constellation','new_arrival','scene'],
+  preferenceTypes: ['meditation','festive','astro','new','scenic'],
   current: null,
 };
 
@@ -694,9 +703,12 @@ function setDef() {
 }
 
 // ===================== EVENT ENGINE =====================
+function hasActiveSource(cs) {
+  return STATE.preferenceTypes.some(p => PREF_TYPES[p] === cs);
+}
 function rec(ek) {
   const e = EVENTS[ek];
-  if (!e || !STATE.sources.includes(e.cs)) return null;
+  if (!e || !hasActiveSource(e.cs)) return null;
   return { url: IMGS.ev[ek], txt: e.txt, ci: e.ci, cs: e.cs };
 }
 
@@ -712,7 +724,7 @@ function runEngine() {
   const top = sorted[0];
   showEv(top.k);
   hiPrio(top.e.prio);
-  if (!STATE.locked && STATE.sources.includes(top.e.cs)) {
+  if (!STATE.locked && hasActiveSource(top.e.cs)) {
     const wp = rec(top.k);
     if (wp) setWall(wp.url, wp.txt, wp.ci);
   }
@@ -739,12 +751,12 @@ function hiPrio(p) {
 function doRefresh() {
   if (STATE.active.length) {
     const sorted = STATE.active.map(k => ({ k, e: EVENTS[k] })).filter(x => x.e).sort((a,b) => a.e.prio - b.e.prio);
-    if (sorted.length && STATE.sources.includes(sorted[0].e.cs)) {
+    if (sorted.length && hasActiveSource(sorted[0].e.cs)) {
       const wp = rec(sorted[0].k);
       if (wp) setWall(wp.url, wp.txt, wp.ci);
     }
   } else {
-    const srcs = STATE.sources;
+    const srcs = STATE.preferenceTypes.map(p => PREF_TYPES[p]).filter(Boolean);
     const curSrc = STATE.current?.cs;
     const idx = curSrc ? srcs.indexOf(curSrc) : -1;
     const nxt = srcs[(idx + 1) % srcs.length];
@@ -798,16 +810,16 @@ $('#modalConfirm').onclick = () => {
 };
 modal.onclick = e => { if (e.target === modal) modal.classList.remove('open'); };
 
-$$('#srcGroup .chk-l').forEach(l => {
+$$('#prefGroup .chk-l').forEach(l => {
   const cb = l.querySelector('input');
   cb.onchange = e => {
-    const src = l.dataset.src;
+    const pref = l.dataset.pref;
     if (e.target.checked) {
-      if (!STATE.sources.includes(src)) STATE.sources.push(src);
+      if (!STATE.preferenceTypes.includes(pref)) STATE.preferenceTypes.push(pref);
       l.classList.add('on');
     } else {
-      if (STATE.sources.length <= 1) { cb.checked = true; return; }
-      STATE.sources = STATE.sources.filter(s => s !== src);
+      if (STATE.preferenceTypes.length <= 1) { cb.checked = true; return; }
+      STATE.preferenceTypes = STATE.preferenceTypes.filter(p => p !== pref);
       l.classList.remove('on');
     }
     if (STATE.active.length) runEngine();
