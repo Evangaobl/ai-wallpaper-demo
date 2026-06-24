@@ -289,10 +289,17 @@ select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
     <h3>📤 上传壁纸</h3>
     <div class="mb-field"><label>壁纸图片</label><input type="file" accept="image/*" id="fileInput" style="display:none"><div style="display:flex;gap:8px"><button class="btn" id="filePickBtn" style="flex:1">📁 选择本地图片</button><input class="inp" id="upImg" placeholder="或输入图片 URL" style="flex:2"></div></div>
     <div class="mb-field"><img class="img-preview" id="upPreview" alt=""></div>
-    <div class="mb-field"><label>壁纸标题</label><input class="inp" id="upTitle" placeholder="如：夏日精选"></div>
+    <div class="mb-field" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div><label>壁纸中文名</label><input class="inp" id="upTitle" placeholder="如：夏日精选"></div>
+      <div><label>壁纸英文名</label><input class="inp" id="upEnTitle" placeholder="如：Summer Selection"></div>
+    </div>
     <div class="mb-field"><label>浮层文案</label><input class="inp" id="upText" placeholder="如：🌊 潮汐 · 放松一刻"></div>
     <div class="mb-field"><label>所属内容源</label><select class="inp" id="upSource"></select></div>
     <div class="mb-field"><label>状态</label><select class="inp" id="upStatus"><option value="已发布">已发布</option><option value="待审核">待审核</option></select></div>
+    <div class="mb-field" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div><label>生效开始时间</label><input class="inp" id="upValidFrom" type="date"></div>
+      <div><label>生效结束时间</label><input class="inp" id="upValidTo" type="date"></div>
+    </div>
     <div class="mb-btns">
       <button class="btn accent w-full" id="upConfirm">确认上传</button>
       <button class="btn w-full" id="upCancel">取消</button>
@@ -328,6 +335,30 @@ select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
   </div>
 </div>
 
+
+<!-- Wallpaper Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-bx" style="max-width:600px">
+    <h3 id="detailModalTitle">📋 素材详情</h3>
+    <div style="margin-bottom:12px">
+      <img id="detailPreview" style="width:100%;aspect-ratio:16/7;object-fit:cover;border-radius:8px;background:var(--bg2)">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">壁纸中文名</label><input class="inp" id="detTitle"></div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">壁纸英文名</label><input class="inp" id="detEnTitle"></div>
+      <div style="grid-column:1/-1"><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">浮层文案</label><input class="inp" id="detText"></div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">所属内容源</label><select class="inp" id="detSource"></select></div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">状态</label><select class="inp" id="detStatus"><option value="已发布">已发布</option><option value="待审核">待审核</option></select></div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">生效开始</label><input class="inp" id="detValidFrom" type="date"></div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">生效结束</label><input class="inp" id="detValidTo" type="date"></div>
+    </div>
+    <div class="flex gap-8">
+      <button class="btn accent w-full" id="detSaveBtn">💾 保存修改</button>
+      <button class="btn w-full" id="detCloseBtn">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- ======================== EVENT LOG ======================== -->
 <div class="tab-page" id="page-events">
   <div class="flex justify-between items-center mb-12">
@@ -352,40 +383,40 @@ select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
 <script>
 // ======================== DATA ========================
 const SOURCES = [
-  { id:'tidal', name:'潮汐', icon:'🌊', prio:5, type:'api', desc:'每日潮汐冥想壁纸', refresh:'daily', def:true },
-  { id:'festival', name:'节日壁纸', icon:'🎉', prio:1, type:'self', desc:'节日/节气主题壁纸', refresh:'event', def:true },
-  { id:'constellation', name:'星座壁纸', icon:'✨', prio:2, type:'self', desc:'星座主题壁纸', refresh:'weekly', def:true },
-  { id:'new_arrival', name:'壁纸上新', icon:'🆕', prio:3, type:'self', desc:'新壁纸批次推荐', refresh:'event', def:true },
-  { id:'commute_morning', name:'早通勤', icon:'🌅', prio:4, type:'scene', desc:'早通勤场景壁纸', refresh:'event', def:false },
-  { id:'commute_evening', name:'晚通勤', icon:'🌆', prio:4, type:'scene', desc:'晚通勤场景壁纸', refresh:'event', def:false },
-  { id:'night_driving', name:'夜间行车', icon:'🌙', prio:4, type:'scene', desc:'夜间行车场景壁纸', refresh:'event', def:false },
-  { id:'charging', name:'充电中', icon:'⚡', prio:4, type:'scene', desc:'充电场景壁纸', refresh:'event', def:false },
-  { id:'low_battery', name:'低电量', icon:'🔋', prio:4, type:'scene', desc:'低电量提示壁纸', refresh:'event', def:false },
-  { id:'weather_rainy', name:'雨天', icon:'🌧️', prio:4, type:'scene', desc:'雨天场景壁纸', refresh:'event', def:false },
-  { id:'weather_snowy', name:'雪天', icon:'❄️', prio:4, type:'scene', desc:'雪天场景壁纸', refresh:'event', def:false },
-  { id:'weather_foggy', name:'雾天', icon:'🌫️', prio:4, type:'scene', desc:'雾天场景壁纸', refresh:'event', def:false },
+  { id:'tidal', name:'潮汐', icon:'🌊', prio:5, type:'api', desc:'每日潮汐冥想壁纸', refresh:'daily', def:true, prefType:'meditation', prefLabel:'自然冥想' },
+  { id:'festival', name:'节日壁纸', icon:'🎉', prio:1, type:'self', desc:'节日/节气主题壁纸', refresh:'event', def:true, prefType:'festive', prefLabel:'节日氛围' },
+  { id:'constellation', name:'星座壁纸', icon:'✨', prio:2, type:'self', desc:'星座主题壁纸', refresh:'weekly', def:true, prefType:'astro', prefLabel:'星座探索' },
+  { id:'new_arrival', name:'壁纸上新', icon:'🆕', prio:3, type:'self', desc:'新壁纸批次推荐', refresh:'event', def:true, prefType:'new', prefLabel:'新品推荐' },
+  { id:'commute_morning', name:'早通勤', icon:'🌅', prio:4, type:'scene', desc:'早通勤场景壁纸', refresh:'event', def:false , prefType:'scenic', prefLabel:'出行相伴'},
+  { id:'commute_evening', name:'晚通勤', icon:'🌆', prio:4, type:'scene', desc:'晚通勤场景壁纸', refresh:'event', def:false , prefType:'scenic', prefLabel:'出行相伴'},
+  { id:'night_driving', name:'夜间行车', icon:'🌙', prio:4, type:'scene', desc:'夜间行车场景壁纸', refresh:'event', def:false , prefType:'scenic', prefLabel:'出行相伴'},
+  { id:'charging', name:'充电中', icon:'⚡', prio:4, type:'scene', desc:'充电场景壁纸', refresh:'event', def:false , prefType:'scenic', prefLabel:'出行相伴'},
+  { id:'low_battery', name:'低电量', icon:'🔋', prio:4, type:'scene', desc:'低电量提示壁纸', refresh:'event', def:false , prefType:'scenic', prefLabel:'出行相伴'},
+  { id:'weather_rainy', name:'雨天', icon:'🌧️', prio:4, type:'scene', desc:'雨天场景壁纸', refresh:'event', def:false , prefType:'scenic', prefLabel:'出行相伴'},
+  { id:'weather_snowy', name:'雪天', icon:'❄️', prio:4, type:'scene', desc:'雪天场景壁纸', refresh:'event', def:false , prefType:'scenic', prefLabel:'出行相伴'},
+  { id:'weather_foggy', name:'雾天', icon:'🌫️', prio:4, type:'scene', desc:'雾天场景壁纸', refresh:'event', def:false , prefType:'scenic', prefLabel:'出行相伴'},
 ];
 
 let nextWpId = 50;
 const WALLPAPERS = [
-  { id:1, src:'tidal', title:'晨间海浪', text:'潮汐 · 晨间冥想', img:'https://picsum.photos/id/1068/400/180', status:'已发布', date:'2026-06-10' },
-  { id:2, src:'tidal', title:'深海宁静', text:'潮汐 · 深海', img:'https://picsum.photos/id/1043/400/180', status:'已发布', date:'2026-06-09' },
-  { id:3, src:'festival', title:'春节·红运', text:'🎊 春节快乐', img:'https://picsum.photos/id/1084/400/180', status:'已发布', date:'2026-06-08' },
-  { id:4, src:'festival', title:'中秋·团圆', text:'🌕 中秋团圆', img:'https://picsum.photos/id/1025/400/180', status:'已发布', date:'2026-06-07' },
-  { id:5, src:'constellation', title:'双子座', text:'♊ 双子座 · 好奇探索', img:'https://picsum.photos/id/1067/400/180', status:'已发布', date:'2026-06-06' },
-  { id:6, src:'constellation', title:'天秤座', text:'♎ 天秤座 · 优雅平衡', img:'https://picsum.photos/id/1024/400/180', status:'待审核', date:'2026-06-05' },
-  { id:7, src:'new_arrival', title:'夏日精选', text:'🆕 夏日上新 · 绚烂一夏', img:'https://picsum.photos/id/1039/400/180', status:'已发布', date:'2026-06-10' },
-  { id:8, src:'new_arrival', title:'城市夜景', text:'🌃 城市系列 · 璀璨之夜', img:'https://picsum.photos/id/1022/400/180', status:'已发布', date:'2026-06-10' },
-  { id:9, src:'commute_morning', title:'阳光大道', text:'🌅 早安 · 开启新的一天', img:'https://picsum.photos/id/1015/400/180', status:'已发布', date:'2026-06-10' },
-  { id:10, src:'commute_evening', title:'落日归途', text:'🌆 夕阳伴你归途', img:'https://picsum.photos/id/1035/400/180', status:'已发布', date:'2026-06-09' },
-  { id:11, src:'night_driving', title:'星空 highway', text:'🌙 夜行 · 星光引路', img:'https://picsum.photos/id/1069/400/180', status:'已发布', date:'2026-06-08' },
-  { id:12, src:'charging', title:'绿色能量', text:'⚡ 电量补给中', img:'https://picsum.photos/id/1049/400/180', status:'已发布', date:'2026-06-08' },
-  { id:13, src:'low_battery', title:'电量告急', text:'🔋 电量不足 · 请及时充电', img:'https://picsum.photos/id/2/400/180', status:'已发布', date:'2026-06-07' },
-  { id:14, src:'weather_rainy', title:'雨中即景', text:'🌧️ 雨天路滑 · 小心驾驶', img:'https://picsum.photos/id/1055/400/180', status:'已发布', date:'2026-06-09' },
-  { id:15, src:'weather_snowy', title:'雪境', text:'❄️ 雪天 · 慢行', img:'https://picsum.photos/id/259/400/180', status:'待审核', date:'2026-06-06' },
-  { id:16, src:'weather_foggy', title:'雾隐山城', text:'🌫️ 雾天 · 谨慎驾驶', img:'https://picsum.photos/id/687/400/180', status:'待审核', date:'2026-06-05' },
-  { id:17, src:'tidal', title:'潮汐日落', text:'🌊 潮汐 · 日落冥想', img:'https://picsum.photos/id/1070/400/180', status:'已发布', date:'2026-06-10' },
-  { id:18, src:'festival', title:'端午·龙舟', text:'🐉 端午安康', img:'https://picsum.photos/id/1050/400/180', status:'待审核', date:'2026-06-10' },
+  { id:1, src:'tidal', title:'晨间海浪', titleEn:'Morning Waves', text:'潮汐 · 晨间冥想', img:'https://picsum.photos/id/1068/400/180', status:'已发布', date:'2026-06-10', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:2, src:'tidal', title:'深海宁静', text:'潮汐 · 深海', img:'https://picsum.photos/id/1043/400/180', status:'已发布', date:'2026-06-09' , titleEn:'Deep Ocean', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:3, src:'festival', title:'春节·红运', text:'🎊 春节快乐', img:'https://picsum.photos/id/1084/400/180', status:'已发布', date:'2026-06-08' , titleEn:'Spring Festival', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:4, src:'festival', title:'中秋·团圆', text:'🌕 中秋团圆', img:'https://picsum.photos/id/1025/400/180', status:'已发布', date:'2026-06-07' , titleEn:'Mid-Autumn', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:5, src:'constellation', title:'双子座', text:'♊ 双子座 · 好奇探索', img:'https://picsum.photos/id/1067/400/180', status:'已发布', date:'2026-06-06' , titleEn:'Gemini', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:6, src:'constellation', title:'天秤座', text:'♎ 天秤座 · 优雅平衡', img:'https://picsum.photos/id/1024/400/180', status:'待审核', date:'2026-06-05' , titleEn:'Libra', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:7, src:'new_arrival', title:'夏日精选', text:'🆕 夏日上新 · 绚烂一夏', img:'https://picsum.photos/id/1039/400/180', status:'已发布', date:'2026-06-10' , titleEn:'Summer Selection', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:8, src:'new_arrival', title:'城市夜景', text:'🌃 城市系列 · 璀璨之夜', img:'https://picsum.photos/id/1022/400/180', status:'已发布', date:'2026-06-10' , titleEn:'City Night', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:9, src:'commute_morning', title:'阳光大道', text:'🌅 早安 · 开启新的一天', img:'https://picsum.photos/id/1015/400/180', status:'已发布', date:'2026-06-10' , titleEn:'Sunny Road', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:10, src:'commute_evening', title:'落日归途', text:'🌆 夕阳伴你归途', img:'https://picsum.photos/id/1035/400/180', status:'已发布', date:'2026-06-09' , titleEn:'Sunset Journey', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:11, src:'night_driving', title:'星空 highway', text:'🌙 夜行 · 星光引路', img:'https://picsum.photos/id/1069/400/180', status:'已发布', date:'2026-06-08' , titleEn:'Starry Highway', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:12, src:'charging', title:'绿色能量', text:'⚡ 电量补给中', img:'https://picsum.photos/id/1049/400/180', status:'已发布', date:'2026-06-08' , titleEn:'Green Energy', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:13, src:'low_battery', title:'电量告急', text:'🔋 电量不足 · 请及时充电', img:'https://picsum.photos/id/2/400/180', status:'已发布', date:'2026-06-07' , titleEn:'Low Battery', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:14, src:'weather_rainy', title:'雨中即景', text:'🌧️ 雨天路滑 · 小心驾驶', img:'https://picsum.photos/id/1055/400/180', status:'已发布', date:'2026-06-09' , titleEn:'Rainy Scene', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:15, src:'weather_snowy', title:'雪境', text:'❄️ 雪天 · 慢行', img:'https://picsum.photos/id/259/400/180', status:'待审核', date:'2026-06-06' , titleEn:'Snowy Wonderland', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:16, src:'weather_foggy', title:'雾隐山城', text:'🌫️ 雾天 · 谨慎驾驶', img:'https://picsum.photos/id/687/400/180', status:'待审核', date:'2026-06-05' , titleEn:'Foggy City', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:17, src:'tidal', title:'潮汐日落', text:'🌊 潮汐 · 日落冥想', img:'https://picsum.photos/id/1070/400/180', status:'已发布', date:'2026-06-10' , titleEn:'Tidal Sunset', validFrom:'2026-06-01', validTo:'2026-07-01' },
+  { id:18, src:'festival', title:'端午·龙舟', text:'🐉 端午安康', img:'https://picsum.photos/id/1050/400/180', status:'待审核', date:'2026-06-10' , titleEn:'Dragon Boat', validFrom:'2026-06-01', validTo:'2026-07-01' },
 ];
 
 const ALL_EVENTS = [
@@ -484,10 +515,109 @@ function srcItem(s) {
   return `<div class="sm-item ${selSrc === s.id ? 'active' : ''}" data-id="${s.id}">
     <span class="si-icon">${s.icon}</span>
     <span class="si-name">${s.name}</span>
+    <span style="font-size:9px;color:var(--accent);padding:0 4px">${s.prefLabel||''}</span>
     <span class="si-count">${count}</span>
   </div>`;
 }
 
+
+
+// ==================== WALLPAPER DETAIL ====================
+let editingWpId = null;
+$('#detailModal').onclick = e => { if (e.target === e.currentTarget) closeDetail(); };
+$('#detCloseBtn').onclick = closeDetail;
+
+function openDetail(wp) {
+  editingWpId = wp.id;
+  $('#detPreview').src = wp.img;
+  $('#detTitle').value = wp.title || '';
+  $('#detEnTitle').value = wp.titleEn || '';
+  $('#detText').value = wp.text || '';
+  const sel = $('#detSource');
+  sel.innerHTML = SOURCES.map(s => `<option value="${s.id}" ${s.id === wp.src ? 'selected' : ''}>${s.icon} ${s.name}</option>`).join('');
+  $('#detStatus').value = wp.status || '待审核';
+  $('#detValidFrom').value = wp.validFrom || '';
+  $('#detValidTo').value = wp.validTo || '';
+  $('#detailModal').classList.add('open');
+}
+
+function closeDetail() {
+  $('#detailModal').classList.remove('open');
+  editingWpId = null;
+}
+
+$('#detSaveBtn').onclick = () => {
+  if (!editingWpId) return;
+  const wp = WALLPAPERS.find(w => w.id === editingWpId);
+  if (!wp) return;
+  wp.title = $('#detTitle').value.trim() || wp.title;
+  wp.titleEn = $('#detEnTitle').value.trim() || '';
+  wp.text = $('#detText').value.trim() || wp.text;
+  wp.src = $('#detSource').value;
+  wp.status = $('#detStatus').value;
+  wp.validFrom = $('#detValidFrom').value || '';
+  wp.validTo = $('#detValidTo').value || '';
+  closeDetail();
+  renderSidebar();
+  renderSourceContent();
+};
+
+// ==================== SOURCE EDITOR (with preference types) ====================
+$('#addSourceBtn').onclick = () => {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.style.display = 'flex';
+  overlay.innerHTML = \`<div class="modal-bx" style="max-width:450px">
+    <h3>📁 新增内容源</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">标识 ID</label><input class="inp" id="aeId" placeholder="new_source"></div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">名称</label><input class="inp" id="aeName" placeholder="新内容源"></div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">图标</label><input class="inp" id="aeIcon" placeholder="📦"></div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">优先级</label><input class="inp" id="aePrio" type="number" value="5"></div>
+      <div style="grid-column:1/-1"><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">描述</label><input class="inp" id="aeDesc" placeholder="内容源描述"></div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">绑定偏好类型</label>
+        <select class="inp" id="aePref">
+          <option value="meditation">🧘 自然冥想</option>
+          <option value="festive">🎊 节日氛围</option>
+          <option value="astro">🔮 星座探索</option>
+          <option value="new">💫 新品推荐</option>
+          <option value="scenic">🛣️ 出行相伴</option>
+        </select>
+      </div>
+      <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">数据来源</label>
+        <select class="inp" id="aeType"><option value="self">手动上传</option><option value="api">第三方 API</option><option value="ai_generated">AI 生成</option></select>
+      </div>
+    </div>
+    <div class="flex gap-8">
+      <button class="btn accent w-full" id="aeConfirm">保存</button>
+      <button class="btn w-full" id="aeCancel">取消</button>
+    </div>
+  </div>\`;
+  document.body.appendChild(overlay);
+
+  document.getElementById('aeCancel').onclick = () => { overlay.remove(); };
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.getElementById('aeConfirm').onclick = () => {
+    const id = document.getElementById('aeId').value.trim();
+    const name = document.getElementById('aeName').value.trim();
+    if (!id || !name) { alert('请填写标识 ID 和名称'); return; }
+    const prefVal = document.getElementById('aePref').value;
+    const prefLabels = { meditation:'自然冥想', festive:'节日氛围', astro:'星座探索', new:'新品推荐', scenic:'出行相伴' };
+    SOURCES.push({
+      id, name, icon: document.getElementById('aeIcon').value || '📦',
+      prio: parseInt(document.getElementById('aePrio').value) || 5,
+      type: document.getElementById('aeType').value,
+      desc: document.getElementById('aeDesc').value || '',
+      refresh: 'event', def: false,
+      prefType: prefVal, prefLabel: prefLabels[prefVal] || name
+    });
+    overlay.remove();
+    updateFilter();
+    renderSidebar();
+    renderSourceContent();
+    renderRules();
+  };
+};
 
 // Tidal 30-day AI generation history
 const TIDAL_HISTORY = Array.from({length: 30}, (_, i) => {
@@ -508,7 +638,7 @@ function renderSourceContent() {
   if (!s) return;
   $('#smhIcon').textContent = s.icon;
   $('#smhName').textContent = s.name;
-  $('#smhDesc').textContent = s.desc;
+  $('#smhDesc').textContent = s.desc + ' · 偏好: ' + (s.prefLabel || '-');
   const grid = $('#smWpGrid');
   
   // Special view for tidal: show 30-day AI generation history
@@ -536,13 +666,13 @@ function renderSourceContent() {
     return;
   }
   grid.innerHTML = walls.map(w => `
-    <div class="wp-card">
+    <div class="wp-card" style="cursor:pointer" onclick='openDetail(${JSON.stringify(w).replace(/'/g,"\\'")})'>
       <div class="wp-img-wrap">
         <img class="wp-img" src="${w.img}" alt="" loading="lazy">
       </div>
       <div class="wp-info">
-        <div class="wp-t truncate">${w.title}</div>
-        <div class="wp-date">${w.date}</div>
+        <div class="wp-t truncate">${w.title}${w.titleEn ? '<span style="color:var(--t3);font-weight:400;margin-left:4px">· ' + w.titleEn + '</span>' : ''}</div>
+        <div class="wp-date">${w.date}${w.validFrom ? ' · ' + w.validFrom + ' ~ ' + w.validTo : ''}</div>
       </div>
     </div>
   `).join('');
@@ -591,13 +721,16 @@ $('#upConfirm').onclick = () => {
     img = $('#upPreview').src;
   }
   const title = $('#upTitle').value.trim();
+  const titleEn = $('#upEnTitle').value.trim();
   const text = $('#upText').value.trim();
   const src = $('#upSource').value;
   const status = $('#upStatus').value;
+  const validFrom = $('#upValidFrom').value;
+  const validTo = $('#upValidTo').value;
   if ((!img || img === $('#upPreview').src && !file) && !title) { alert('请选择图片并填写标题'); return; }
   if (!img) { alert('请选择本地图片或输入 URL'); return; }
   if (!title) { alert('请填写壁纸标题'); return; }
-  WALLPAPERS.push({ id: nextWpId++, src, title, text: text || title, img, status, date: new Date().toISOString().slice(0,10) });
+  WALLPAPERS.push({ id: nextWpId++, src, title, titleEn: titleEn || title, text: text || title, img, status, date: new Date().toISOString().slice(0,10), validFrom: validFrom || '', validTo: validTo || '' });
   $('#uploadModal').classList.remove('open');
   $('#upImg').value = 'https://picsum.photos/id/'; $('#upTitle').value = ''; $('#upText').value = '';
   renderSidebar();
