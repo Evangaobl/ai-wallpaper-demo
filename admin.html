@@ -274,6 +274,7 @@ select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
           </div>
         </div>
         <div class="flex gap-8">
+          <button class="btn sm" id="addSourceBtn">📁 新增内容源</button>
           <button class="btn green sm" id="aiGenBtn">🤖 AI 生成</button>
           <button class="btn accent sm" id="uploadBtn">+ 上传壁纸</button>
         </div>
@@ -341,7 +342,7 @@ select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns
   <div class="modal-bx" style="max-width:600px">
     <h3 id="detailModalTitle">📋 素材详情</h3>
     <div style="margin-bottom:12px">
-      <img id="detailPreview" style="width:100%;aspect-ratio:16/7;object-fit:cover;border-radius:8px;background:var(--bg2)">
+      <img id="detPreview" style="width:100%;aspect-ratio:16/7;object-fit:cover;border-radius:8px;background:var(--bg2)">
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
       <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">壁纸中文名</label><input class="inp" id="detTitle"></div>
@@ -529,7 +530,7 @@ $('#detCloseBtn').onclick = closeDetail;
 
 function openDetail(wp) {
   editingWpId = wp.id;
-  $('#detPreview').src = wp.img;
+  $('#detPreview').src = wp.img.startsWith('http') ? wpSvg(wp) : wp.img;
   $('#detTitle').value = wp.title || '';
   $('#detEnTitle').value = wp.titleEn || '';
   $('#detText').value = wp.text || '';
@@ -563,11 +564,12 @@ $('#detSaveBtn').onclick = () => {
 };
 
 // ==================== SOURCE EDITOR (with preference types) ====================
-$('#addSourceBtn').onclick = () => {
+var _addBtn = $('#addSourceBtn');
+if (_addBtn) _addBtn.onclick = () => {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay open';
   overlay.style.display = 'flex';
-  overlay.innerHTML = \`<div class="modal-bx" style="max-width:450px">
+  overlay.innerHTML = `<div class="modal-bx" style="max-width:450px">
     <h3>📁 新增内容源</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
       <div><label style="font-size:10px;color:var(--t3);display:block;margin-bottom:3px">标识 ID</label><input class="inp" id="aeId" placeholder="new_source"></div>
@@ -592,7 +594,7 @@ $('#addSourceBtn').onclick = () => {
       <button class="btn accent w-full" id="aeConfirm">保存</button>
       <button class="btn w-full" id="aeCancel">取消</button>
     </div>
-  </div>\`;
+  </div>`;
   document.body.appendChild(overlay);
 
   document.getElementById('aeCancel').onclick = () => { overlay.remove(); };
@@ -620,6 +622,27 @@ $('#addSourceBtn').onclick = () => {
 };
 
 // Tidal 30-day AI generation history
+
+const SOURCE_COLORS = {
+  tidal:'#0077b6', festival:'#c0392b', constellation:'#6a0dad',
+  new_arrival:'#00897b', commute_morning:'#f39c12', commute_evening:'#e67e22',
+  night_driving:'#2c3e50', charging:'#27ae60', low_battery:'#c0392b',
+  weather_rainy:'#2980b9', weather_snowy:'#7f8c8d', weather_foggy:'#95a5a6'
+};
+function wpSvg(wp) {
+  const color = SOURCE_COLORS[wp.src] || '#555';
+  const title = (wp.title || '').replace(/[<>]/g,'');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="180">
+    <defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:${color};stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:0.9"/>
+    </linearGradient></defs>
+    <rect width="400" height="180" fill="url(#bg)"/>
+    <text x="200" y="85" text-anchor="middle" fill="white" font-size="18" font-weight="500">${title}</text>
+    <text x="200" y="110" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="12">${wp.titleEn || ''}</text>
+  </svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
 const TIDAL_HISTORY = Array.from({length: 30}, (_, i) => {
   const d = new Date(); d.setDate(d.getDate() - i);
   const r = Math.random();
@@ -648,7 +671,7 @@ function renderSourceContent() {
       const cls = h.status === 'success' ? 'green' : (h.status === 'fail' ? 'red' : 'amber');
       return '<div class="wp-card">' +
         '<div class="wp-img-wrap">' +
-          (h.img ? '<img class="wp-img" src="' + h.img + '" loading="lazy">' : '<div class="wp-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--t3);background:var(--bg2)">' + (h.status === 'fail' ? '❌' : '⏳') + '</div>') +
+          (h.img ? '<img class="wp-img" src="' + (h.img.startsWith('http') ? wpSvg(h) : h.img) + '" loading="lazy">' : '<div class="wp-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--t3);background:var(--bg2)">' + (h.status === 'fail' ? '❌' : '⏳') + '</div>') +
         '</div>' +
         '<div class="wp-info">' +
           '<div class="wp-t truncate" style="display:flex;align-items:center;gap:4px">' + h.date + ' <span class="tag ' + cls + '">' + icon + ' ' + (h.status === 'success' ? '成功' : (h.status === 'fail' ? '失败' : '处理中')) + '</span></div>' +
@@ -668,7 +691,7 @@ function renderSourceContent() {
   grid.innerHTML = walls.map(w => `
     <div class="wp-card" style="cursor:pointer" onclick='openDetail(${JSON.stringify(w).replace(/'/g,"\\'")})'>
       <div class="wp-img-wrap">
-        <img class="wp-img" src="${w.img}" alt="" loading="lazy">
+        <img class="wp-img" src="${wpSvg(w)}" alt="" loading="lazy">
       </div>
       <div class="wp-info">
         <div class="wp-t truncate">${w.title}${w.titleEn ? '<span style="color:var(--t3);font-weight:400;margin-left:4px">· ' + w.titleEn + '</span>' : ''}</div>
